@@ -1,20 +1,21 @@
-from dotenv import load_dotenv
-from langchain_core.tools import tool
-# from langchain_openai import ChatOpenAI
-from langchain_google_genai import ChatGoogleGenerativeAI
 
-from langchain_tavily import TavilySearch
+from dotenv import load_dotenv
+from langgraph.graph import MessagesState
+from langgraph.prebuilt import ToolNode
+
+from react import llm, tools
 
 load_dotenv()
 
-@tool
-def triple(num:float) -> float:
-    """
-    param num: a number to triple
-    returns: the triple of the input number
-    """
-    return float(num) * 3
+SYSYEM_MESSAGE="""
+You are a helpful assistant that can use tools to answer questions.
+"""
 
-tools = [TavilySearch(max_results=1), triple]
+def run_agent_reasoning(state: MessagesState) -> MessagesState:
+    """
+    Run the agent reasoning node.
+    """
+    response = llm.invoke([{"role": "system", "content": SYSYEM_MESSAGE}, *state["messages"]])
+    return {"messages": [response]}
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0).bind_tools(tools)
+tool_node = ToolNode(tools)
